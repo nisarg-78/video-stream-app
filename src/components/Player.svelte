@@ -8,6 +8,7 @@
 	$: volume = video ? video.volume : 0.2;
 	$: isMuted = false;
 	$: items = [];
+	$: level = 0;
 
 	function handlePause() {
 		video.pause();
@@ -37,17 +38,30 @@
 		return;
 	}
 
+	setInterval(() => {
+		if(hls && hls.currentLevel !== level){
+			console.log("hls.currentLevel:", hls.currentLevel)
+			level = hls.currentLevel
+		}
+	}, 1000)
+
 	function handleQaulity(event) {
+		
 		if(hls){
-			hls.currentLevel = event.target.value
-			console.log('hls.currentLevel', hls.currentLevel)
+			const quality = event.target.value;
+			console.log(quality)
+			hls.levels.forEach((lvl, lvlIndx) => {
+				if(lvl.height === quality){
+					hls.currentLevel = lvlIndx
+				}
+			})
 		}
 	}
 
 	onMount(() => {
 		if (Hls.isSupported()) {
 			hls = new Hls();
-			hls.loadSource('http://localhost:3000/videos/video0');
+			hls.loadSource('https://devstreaming-cdn.apple.com/videos/streaming/examples/img_bipbop_adv_example_fmp4/master.m3u8');
 			hls.attachMedia(video);
 
 			video.volume = volume;
@@ -58,8 +72,10 @@
 			hls.on(Hls.Events.MANIFEST_PARSED, function (event, data) {
 				console.log(data.levels)
 				for(let i = 0; i < data.levels.length; i++) {
+					if(items.includes(data.levels[i].height)) continue;
 					items = [...items, data.levels[i].height];
 				}
+				console.log(items)
 			});
 		}
 	});
@@ -84,8 +100,8 @@
 			<input type="range" on:change={handleVolume} id="volume" name="volume" min="0" max="100" />
 
 			<select on:change={handleQaulity} name="quality" id="quality">
-				{#each items as item, i}
-					<option value="{i}">{item} {i}</option>
+				{#each items as item}
+					<option value="{item}">{item}</option>
 				{/each}
 			</select>
 
