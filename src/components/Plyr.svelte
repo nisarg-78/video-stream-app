@@ -4,7 +4,7 @@
 
 	onMount(async () => {
 		const video = document.getElementById('player');
-		const src = 'http://localhost:3000/videos/video0';
+		const src = 'https://demo.unified-streaming.com/k8s/features/stable/video/tears-of-steel/tears-of-steel.mp4/.m3u8';
 		const defaultOptions = {};
 		if (Hls.isSupported()) {
 			const hls = new Hls();
@@ -12,6 +12,7 @@
 
 			hls.on(Hls.Events.MANIFEST_PARSED, function () {
 				const availableQualities = hls.levels.map((l) => l.height);
+				console.log(hls.levels);
 				defaultOptions.controls = [
 					'play-large',
 					'play',
@@ -24,14 +25,13 @@
 					'fullscreen'
 				];
 				defaultOptions.quality = {
-					default: availableQualities[0],
 					options: availableQualities,
 					forced: true,
 					onChange: (e) => updateQuality(e)
 				};
 				function updateQuality(newQuality) {
+					console.log(newQuality);
 					hls.levels.forEach((level, levelIndex) => {
-						console.log(level, levelIndex);
 						if (level.height === newQuality) {
 							hls.currentLevel = levelIndex;
 						}
@@ -56,14 +56,14 @@
 <style>
 	:root {
 		--plyr-color-main: #495057;
-        --plyr-video-control-color: #dee2e6;
-        --plyr-video-control-background-hover: #495057;
-        --plyr-video-controls-background: linear-gradient(rgba(0, 0, 0, 0), rgba(0, 0, 0, 0.75));
-        --plyr-control-padding: --plyr-control-spacing * 0;
-        --plyr-tooltip-padding: --plyr-control-spacing * 0;
+		--plyr-video-control-color: #dee2e6;
+		--plyr-video-control-background-hover: #495057;
+		--plyr-video-controls-background: linear-gradient(rgba(0, 0, 0, 0), rgba(0, 0, 0, 0.75));
+		--plyr-control-padding: --plyr-control-spacing * 0;
+		--plyr-tooltip-padding: --plyr-control-spacing * 0;
 	}
-    
-    #player{
-        height: 100%;
-    }
+
+	#player {
+		max-height: 100vh;
+	}
 </style>
