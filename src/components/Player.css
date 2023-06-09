@@ -1,0 +1,81 @@
+.container {
+	background-color: #232a30;
+	height: 100vh;
+	display: flex;
+	flex-direction: column;
+	justify-content: center;
+	align-items: center;
+}
+
+.player-container {
+	width: 70%;
+	display: flex;
+	flex-direction: column;
+	position: relative;
+}
+
+.video_consumed{
+    margin-bottom: 5px solid red;
+    width: 100%;
+}
+
+.controls {
+	position: absolute;
+	bottom: 0;
+	width: 100%;
+	background-color: #3e4b56;
+	display: flex;
+	flex-direction: column;
+	align-items: center;
+	color: rgb(255, 255, 255);
+	background: linear-gradient(
+		0deg,
+		rgba(0, 0, 0, 0.4009978991596639) 0%,
+		rgba(0, 0, 0, 0) 74%,
+		rgba(255, 255, 255, 0) 100%
+	);
+	opacity: 1;
+	transition: opacity 0.3s;
+}
+
+.player-container:hover .controls {
+	opacity: 1;
+}
+
+.control-handles {
+	display: flex;
+	align-items: center;
+	justify-content: center;
+}
+
+.control-handles > div {
+	margin: 0 10px; /* Adjust spacing between the handles */
+}
+
+.control-handles button {
+    height: 100%;
+	display: flex;
+	align-items: center;
+	justify-content: center;
+	/* Add any additional styling you need for the buttons */
+}
+
+.container button {
+	all: unset;
+	cursor: pointer;
+	color: rgb(201, 201, 201);
+	font-size: 0.75rem;
+	margin: 0 0.5rem;
+}
+
+.videoProgress {
+	display: flex;
+}
+
+.videoProgress input {
+	flex-grow: 1;
+}
+
+.resolutionSelector {
+	width: fit-content;
+}

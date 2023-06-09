@@ -10,7 +10,8 @@
 	$: items = [];
 	$: level = hls ? hls.currentLevel : 0;
 	$: fullscreen = false;
-	$: playbackTime = 0;
+	$: playbackTime = video ? video.currentTime : 0;
+	$: bufferedTime = 0;
 	$: duration = hls && playbackTime ? video.duration : 0;
 
 	function handlePause() {
@@ -23,12 +24,16 @@
 		playing = true;
 	}
 
+	function handleClickOnVideo() {
+		if (playing) handlePause();
+		else handlePlay();
+	}
+
 	function handleVolume(event) {
 		const volume = event.target.value;
 		video.volume = volume / maxVolume;
 		if (volume === 0) isMuted = true;
 		else isMuted = false;
-		console.log(volume)
 	}
 
 	function handleMute() {
@@ -43,11 +48,13 @@
 	}
 
 	function handleSeek(event) {
-		console.log(event.target.value)
-		const seek = event.target.value / duration;
-		console.log(seek)
-		video.currentTime = seek;
-		playbackTime = event.target.value;
+		console.log(event.target)
+		const newTime = event.offsetX / event.target.offsetWidth * duration
+		video.currentTime = newTime;
+		// console.log(video.currentTime)
+		// console.log((playbackTime / duration) * 100)
+		playbackTime = newTime;
+
 	}
 
 	setInterval(() => {
@@ -77,10 +84,12 @@
 	onMount(() => {
 		if (Hls.isSupported()) {
 			hls = new Hls();
-			hls.loadSource(
-				'https://demo.unified-streaming.com/k8s/features/stable/video/tears-of-steel/tears-of-steel.mp4/.m3u8'
-			);
+			let src = "https://d1fcqrzxghru70.cloudfront.net/shemaroo-vod/altplatform/PhirHeraPheriHDSNPmp4-776/d9802c268ad05666548e4819aa4e0c4d_main_laptop_paid_us.m3u8?hdnts=st=1686304941~exp=1686315741~acl=*~data=testdata~hmac=8d015dd7656cf32a820847b93ad9bcd2871e73ca1accdd323720e4b485c5a27c"
+			hls.loadSource(src);
 			hls.attachMedia(video);
+
+			//TODO: Add subtitle support
+			hls.subtitleDisplay = false;
 
 			console.log('Duration:', video.duration);
 			duration = video.duration;
@@ -93,6 +102,13 @@
 				}
 				console.log(items);
 			});
+
+			video.addEventListener('progress', function () {
+				let buffered = video.buffered;
+				if (buffered.length > 0) {
+					bufferedTime = buffered.end(buffered.length - 1);
+				}
+			});
 		}
 	});
 </script>
@@ -100,62 +116,73 @@
 <div class="container">
 	<div class="player-container">
 		<!-- svelte-ignore a11y-media-has-caption -->
-		<video class="player" bind:this={video} bind:currentTime={playbackTime} loop />
-
+		<video
+			class="video"
+			bind:this={video}
+			on:click={handleClickOnVideo}
+			bind:currentTime={playbackTime}
+			loop
+		/>
 		<div class="controls">
-
-			<div>
-				{#if playing}
-					<button on:click={handlePause}>
-						<i class="fa fa-pause" aria-hidden="true" />
-					</button>
-				{:else}
-					<button on:click={handlePlay}>
-						<i class="fa fa-play" aria-hidden="true" />
-					</button>
-				{/if}
+			<!-- svelte-ignore a11y-click-events-have-key-events -->
+			<div class="video-progress" on:click={(e) => handleSeek(e)} >
+				<div class="video-bar"/>
+				<div class="video-consumed" style="min-width: {(playbackTime / duration) * 100}%" />
+				<div class="video-buffered" style="min-width: {(bufferedTime / duration) * 100}%" />
 			</div>
 
-			<div>
-				{#if isMuted}
-					<button on:click={handleMute}>
-						<i class="fa fa-volume-off" aria-hidden="true" />
-					</button>
-				{:else}
-					<button on:click={handleMute}>
-						<i class="fa fa-volume-up" aria-hidden="true" />
-					</button>
-				{/if}
-				<input type="range" on:input={handleVolume} id="volume" name="volume" min="0" max={maxVolume} />
-			</div>
+			<div class="control-handles">
+				<!-- play/pause handle  -->
+				<div>
+					{#if playing}
+						<button on:click={handlePause}>
+							<i class="fa fa-pause" aria-hidden="true" />
+						</button>
+					{:else}
+						<button on:click={handlePlay}>
+							<i class="fa fa-play" aria-hidden="true" />
+						</button>
+					{/if}
+				</div>
 
-			<div class="videoProgress">
-				<span
-					>{new Date(Number(Number(playbackTime).toFixed(0)) * 1000).toISOString().substring(14, 19)}</span
-				>
-				<input
-					type="range"
-					id="seek"
-					value={playbackTime}
-					on:change={handleSeek}
-					on:mousedown={handlePause}
-					on:mouseup={handlePlay}
-					name="seek"
-					min="0"
-					max={duration ? duration : 0}
-				/>
-				{new Date(duration * 1000).toISOString().substring(14, 19)}
-			</div>
+				<!-- playback time -->
+				<div class="progress-time">
+					{new Date(Number(Number(playbackTime).toFixed(0)) * 1000)
+						.toISOString()
+						.substring(14, 19)}/{new Date(duration * 1000).toISOString().substring(14, 19)}
+				</div>
 
-			<div class="resolutionSelector">
-				<select on:change={handleQaulity} name="quality" id="quality">
-					{#each items as item}
-						<option value={item}>{item[0]}p {(item[1]/1024/1024).toFixed(2)}Mbps</option>
-					{/each}
-					<option value="auto">Auto {hls ? hls?.levels[level]?.height + 'p' : ''}</option>
-				</select>
-			</div>
+				<!-- volume hanlde -->
+				<div>
+					{#if isMuted}
+						<button on:click={handleMute}>
+							<i class="fa fa-volume-off" aria-hidden="true" />
+						</button>
+					{:else}
+						<button on:click={handleMute}>
+							<i class="fa fa-volume-up" aria-hidden="true" />
+						</button>
+					{/if}
+					<input
+						type="range"
+						on:input={handleVolume}
+						id="volume"
+						name="volume"
+						min="0"
+						max={maxVolume}
+					/>
+				</div>
 
+				<!-- quality handle -->
+				<div class="resolutionSelector">
+					<select on:change={handleQaulity} name="quality" id="quality">
+						{#each items as item}
+							<option value={item}>{item[0]}p ({(item[1] / 1024 / 1024).toFixed(2)}Mbps)</option>
+						{/each}
+						<option value="auto">Auto {hls ? hls?.levels[level]?.height + 'p' : ''}</option>
+					</select>
+				</div>
+			</div>
 		</div>
 	</div>
 </div>
@@ -171,7 +198,6 @@
 <style>
 	.container {
 		background-color: #232a30;
-		width: 100vw;
 		height: 100vh;
 		display: flex;
 		flex-direction: column;
@@ -180,41 +206,99 @@
 	}
 
 	.player-container {
-		width: 100%;
+		max-width: 70%;
 		display: flex;
 		flex-direction: column;
+		position: relative;
 	}
 
-	.player {
+	.video-consumed,
+	.video-buffered {
+		position: absolute;
+		height: 3px;
+	}
+
+	.video-progress {
 		width: 100%;
+		height: 3px;
+		background-color: rgba(255, 255, 255, 0.336);
+		display: flex;
+		position: relative;
+		margin-bottom: 0.25rem;
 	}
 
-	.controls{
+	.video-bar{
+		min-width: 100%;
+		height: 3px;
+		z-index: 2;
+
+	}
+
+	.video-consumed {
+		background-color: red;
+		z-index: 1;
+	}
+
+	.video-buffered {
+		background-color: #4d81af;
+	}
+
+	.controls {
+		position: absolute;
+		bottom: 0;
 		width: 100%;
 		background-color: #3e4b56;
 		display: flex;
+		flex-direction: column;
 		align-items: center;
+		color: rgb(255, 255, 255);
+		background: linear-gradient(
+			0deg,
+			rgba(0, 0, 0, 0.4009978991596639) 0%,
+			rgba(0, 0, 0, 0) 74%,
+			rgba(255, 255, 255, 0) 100%
+		);
+		opacity: 0;
+		transition: opacity 0.3s;
+	}
+
+	.player-container:hover .controls {
+		opacity: 1;
+	}
+
+	.control-handles {
+		display: flex;
+		align-items: center;
+		justify-content: center;
+	}
+
+	.control-handles > div {
+		margin: 0 10px; /* Adjust spacing between the handles */
+	}
+
+	.control-handles button {
+		height: 100%;
+		display: flex;
+		align-items: center;
+		justify-content: center;
+		/* Add any additional styling you need for the buttons */
+	}
+
+	.container button {
+		all: unset;
+		cursor: pointer;
 		color: rgb(201, 201, 201);
+		font-size: 0.75rem;
+		margin: 0 0.5rem;
 	}
 
-	.controls div{
-		display: flex;
-		align-items: center;
-	}
-
-	.container .videoProgress{
-		flex-grow: 1;
-		margin: 0 1rem;
-	}
-
-	.videoProgress{
+	.videoProgress {
 		display: flex;
 	}
 
-	.videoProgress input{
+	.videoProgress input {
 		flex-grow: 1;
 	}
-
 
 	.resolutionSelector {
 		width: fit-content;
