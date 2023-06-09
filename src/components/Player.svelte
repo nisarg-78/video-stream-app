@@ -5,13 +5,13 @@
 	let video;
 	let hls;
 	const maxVolume = 100;
-	$: playing = false;
-	$: isMuted = false;
-	$: items = [];
+	let isMuted = false;
+	let resolutions = [];
+	let fullscreen = false;
+	let playing = false;
 	$: level = hls ? hls.currentLevel : 0;
-	$: fullscreen = false;
+	let bufferedTime = 0;
 	$: playbackTime = video ? video.currentTime : 0;
-	$: bufferedTime = 0;
 	$: duration = hls && playbackTime ? video.duration : 0;
 
 	function handlePause() {
@@ -20,13 +20,14 @@
 	}
 
 	function handlePlay() {
-		video.play();
-		playing = true;
-	}
-
-	function handleClickOnVideo() {
-		if (playing) handlePause();
-		else handlePlay();
+		if (!video) return;
+		if (!playing) {
+			video.play();
+			playing = true;
+		} else {
+			video.pause();
+			playing = false;
+		}
 	}
 
 	function handleVolume(event) {
@@ -48,13 +49,10 @@
 	}
 
 	function handleSeek(event) {
-		console.log(event.target)
-		const newTime = event.offsetX / event.target.offsetWidth * duration
+		console.log(event.target);
+		const newTime = (event.offsetX / event.target.offsetWidth) * duration;
 		video.currentTime = newTime;
-		// console.log(video.currentTime)
-		// console.log((playbackTime / duration) * 100)
 		playbackTime = newTime;
-
 	}
 
 	setInterval(() => {
@@ -84,9 +82,11 @@
 	onMount(() => {
 		if (Hls.isSupported()) {
 			hls = new Hls();
-			let src = "https://d1fcqrzxghru70.cloudfront.net/shemaroo-vod/altplatform/PhirHeraPheriHDSNPmp4-776/d9802c268ad05666548e4819aa4e0c4d_main_laptop_paid_us.m3u8?hdnts=st=1686304941~exp=1686315741~acl=*~data=testdata~hmac=8d015dd7656cf32a820847b93ad9bcd2871e73ca1accdd323720e4b485c5a27c"
+			let src =
+				'https://bitdash-a.akamaihd.net/content/sintel/hls/playlist.m3u8';
 			hls.loadSource(src);
 			hls.attachMedia(video);
+			hls.enableWorker = true;
 
 			//TODO: Add subtitle support
 			hls.subtitleDisplay = false;
@@ -98,9 +98,9 @@
 			hls.on(Hls.Events.MANIFEST_PARSED, function (event, data) {
 				console.log(data.levels);
 				for (let i = 0; i < data.levels.length; i++) {
-					items = [...items, [data.levels[i].height, data.levels[i].bitrate]];
+					resolutions = [...resolutions, [data.levels[i].height, data.levels[i].bitrate]];
 				}
-				console.log(items);
+				console.log(resolutions);
 			});
 
 			video.addEventListener('progress', function () {
@@ -119,14 +119,15 @@
 		<video
 			class="video"
 			bind:this={video}
-			on:click={handleClickOnVideo}
+			on:click={handlePlay}
 			bind:currentTime={playbackTime}
 			loop
 		/>
+
 		<div class="controls">
 			<!-- svelte-ignore a11y-click-events-have-key-events -->
-			<div class="video-progress" on:click={(e) => handleSeek(e)} >
-				<div class="video-bar"/>
+			<div class="video-progress" on:click={(e) => handleSeek(e)}>
+				<div class="video-bar" />
 				<div class="video-consumed" style="min-width: {(playbackTime / duration) * 100}%" />
 				<div class="video-buffered" style="min-width: {(bufferedTime / duration) * 100}%" />
 			</div>
@@ -135,7 +136,7 @@
 				<!-- play/pause handle  -->
 				<div>
 					{#if playing}
-						<button on:click={handlePause}>
+						<button on:click={handlePlay}>
 							<i class="fa fa-pause" aria-hidden="true" />
 						</button>
 					{:else}
@@ -153,7 +154,7 @@
 				</div>
 
 				<!-- volume hanlde -->
-				<div>
+				<div class="volume-hanlde">
 					{#if isMuted}
 						<button on:click={handleMute}>
 							<i class="fa fa-volume-off" aria-hidden="true" />
@@ -174,10 +175,10 @@
 				</div>
 
 				<!-- quality handle -->
-				<div class="resolutionSelector">
+				<div class="resolution-selector">
 					<select on:change={handleQaulity} name="quality" id="quality">
-						{#each items as item}
-							<option value={item}>{item[0]}p ({(item[1] / 1024 / 1024).toFixed(2)}Mbps)</option>
+						{#each resolutions as res}
+							<option value={res}>{res[0]}p ({(res[1] / 1024 / 1024).toFixed(2)}Mbps)</option>
 						{/each}
 						<option value="auto">Auto {hls ? hls?.levels[level]?.height + 'p' : ''}</option>
 					</select>
@@ -194,9 +195,12 @@
 	crossorigin="anonymous"
 	referrerpolicy="no-referrer"
 />
+<link rel="preconnect" href="https://fonts.bunny.net">
+<link href="https://fonts.bunny.net/css?family=andika:400" rel="stylesheet" />
 
 <style>
 	.container {
+		font-family: 'Andika', sans-serif;
 		background-color: #232a30;
 		height: 100vh;
 		display: flex;
@@ -206,7 +210,7 @@
 	}
 
 	.player-container {
-		max-width: 70%;
+		width: 90%;
 		display: flex;
 		flex-direction: column;
 		position: relative;
@@ -224,14 +228,12 @@
 		background-color: rgba(255, 255, 255, 0.336);
 		display: flex;
 		position: relative;
-		margin-bottom: 0.25rem;
 	}
 
-	.video-bar{
+	.video-bar {
 		min-width: 100%;
 		height: 3px;
 		z-index: 2;
-
 	}
 
 	.video-consumed {
@@ -266,22 +268,20 @@
 		opacity: 1;
 	}
 
-	.control-handles {
+	.volume-hanlde {
 		display: flex;
 		align-items: center;
-		justify-content: center;
+	}
+
+	.control-handles {
+		width: 100%;
+		display: flex;
+		justify-content: flex-start;
+		margin: 0.35rem 0;
 	}
 
 	.control-handles > div {
-		margin: 0 10px; /* Adjust spacing between the handles */
-	}
-
-	.control-handles button {
-		height: 100%;
-		display: flex;
-		align-items: center;
-		justify-content: center;
-		/* Add any additional styling you need for the buttons */
+		margin: 0 10px;
 	}
 
 	.container button {
@@ -289,18 +289,14 @@
 		cursor: pointer;
 		color: rgb(201, 201, 201);
 		font-size: 0.75rem;
-		margin: 0 0.5rem;
+		margin: 0 0.25rem;
 	}
 
-	.videoProgress {
+	.control-handles .resolution-selector {
+		margin-left: auto;
 		display: flex;
+		align-items: center;
 	}
 
-	.videoProgress input {
-		flex-grow: 1;
-	}
-
-	.resolutionSelector {
-		width: fit-content;
-	}
+	
 </style>
