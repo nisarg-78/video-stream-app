@@ -6,6 +6,7 @@
 	let video;
 	let playerContainer;
 	let playerControls;
+	let loaderIcon;
 	let hls;
 	const maxVolume = 100;
 	let isMuted = false;
@@ -27,6 +28,14 @@
 			video.pause();
 			playing = false;
 		}
+	}
+
+	function handleWaiting() {
+		loaderIcon.style.display = 'block';
+	}
+
+	function handlePlaying() {
+		loaderIcon.style.display = 'none';
 	}
 
 	function handleMouseMove() {
@@ -114,13 +123,13 @@
 	}
 
 	onMount(() => {
-		console.log("src", src)
+		console.log('src', src);
 		if (Hls.isSupported()) {
 			hls = new Hls({
 				forceKeyFrameOnDiscontinuity: true
 			});
 			hls.loadSource(src);
-			console.log(hls)
+			console.log(hls);
 			hls.attachMedia(video);
 			hls.enableWorker = true;
 
@@ -139,9 +148,21 @@
 				console.log(resolutions);
 			});
 
-			video.play()
+			hls.on(Hls.Events.LEVEL_LOADING, function (event, data) {
+				if (data.buffering) {
+					// Video is buffering
+					console.log('Video is buffering');
+					// Perform actions when buffering starts
+				} else {
+					// Buffering has ended
+					console.log('Buffering has ended');
+					// Perform actions when buffering ends
+				}
+			});
 
-			console.log(video)
+			video.play();
+
+			console.log(video);
 
 			video.addEventListener('progress', function () {
 				let buffered = video?.buffered;
@@ -149,7 +170,6 @@
 					bufferedTime = buffered.end(buffered.length - 1);
 				}
 			});
-
 		}
 	});
 </script>
@@ -169,9 +189,43 @@
 			bind:this={video}
 			on:click={handlePlay}
 			on:dblclick={handleFullscreen}
+			on:waiting={handleWaiting}
+			on:playing={handlePlaying}
 			bind:currentTime={playbackTime}
 			loop
 		/>
+
+		<!-- loading icon -->
+		<svg
+			xmlns="http://www.w3.org/2000/svg"
+			xmlns:xlink="http://www.w3.org/1999/xlink"
+			style="margin: auto; background: none; display: block; shape-rendering: auto;"
+			width="200px"
+			height="200px"
+			viewBox="0 0 100 100"
+			preserveAspectRatio="xMidYMid"
+			class="loader"
+			bind:this={loaderIcon}
+		>
+			<circle
+				cx="50"
+				cy="50"
+				fill="none"
+				stroke="#85a2b6"
+				stroke-width="10"
+				r="35"
+				stroke-dasharray="164.93361431346415 56.97787143782138"
+			>
+				<animateTransform
+					attributeName="transform"
+					type="rotate"
+					repeatCount="indefinite"
+					dur="1s"
+					values="0 50 50;360 50 50"
+					keyTimes="0;1"
+				/>
+			</circle>
+		</svg>
 
 		<div class="controls" bind:this={playerControls}>
 			<!-- svelte-ignore a11y-click-events-have-key-events -->
@@ -229,7 +283,7 @@
 						{#each resolutions as res}
 							<option value={res}>{res[0]}p ({(res[1] / 1024 / 1024).toFixed(2)}Mbps)</option>
 						{/each}
-						<option value="auto">Auto {hls ? hls?.levels[level]?.height + 'p' : ''}</option>
+						<option value="auto">Auto {hls?.levels[level]?.height ? hls?.levels[level]?.height + 'p' : ''}</option>
 					</select>
 				</div>
 
@@ -273,15 +327,22 @@
 
 	.player-container {
 		background-color: #000;
-		max-height: 90vh;
-		max-width: 90%;
+		height: 90vh;
+		width: 100vw;
 		display: flex;
 		flex-direction: column;
 		position: relative;
 		justify-content: center;
 	}
 
+	.loader{
+		position: absolute;
+		left: 50%;
+		transform: translateX(-50%);
+	}
+
 	.video {
+		object-fit: contain;
 		max-width: 100%;
 		max-height: 100%;
 	}
@@ -310,12 +371,12 @@
 	}
 
 	.video-consumed {
-		background-color: red;
+		background-color: #0400e9;
 		z-index: 1;
 	}
 
 	.video-buffered {
-		background-color: #4d81af;
+		background-color: rgba(167, 198, 228, 0.5);
 	}
 
 	.controls {
@@ -331,7 +392,7 @@
 		transition: opacity 0.3s;
 	}
 
-	.controls i{
+	.controls i {
 		font-size: 1.4em;
 	}
 
