@@ -2,18 +2,21 @@
 	import { onMount } from 'svelte';
 	import Hls from 'hls.js';
 
+	export let src;
 	let video;
 	let playerContainer;
+	let playerControls;
 	let hls;
 	const maxVolume = 100;
 	let isMuted = false;
 	let resolutions = [];
 	let isFullscreen = false;
-	let playing = false;
+	$: playing = video ? !video.paused : false;
 	$: level = hls ? hls.currentLevel : 0;
 	let bufferedTime = 0;
 	let playbackTime = 0;
 	$: duration = hls && playbackTime ? video.duration : 0;
+	let showControlsTimeout = null;
 
 	function handlePlay() {
 		if (!video) return;
@@ -24,6 +27,16 @@
 			video.pause();
 			playing = false;
 		}
+	}
+
+	function handleMouseMove() {
+		document.body.style.cursor = 'auto';
+		if (showControlsTimeout) clearTimeout(showControlsTimeout);
+		playerControls.style.opacity = 1;
+		showControlsTimeout = setTimeout(() => {
+			playerControls.style.opacity = 0;
+			document.body.style.cursor = 'none';
+		}, 3000);
 	}
 
 	function throttle(func, delay) {
@@ -45,7 +58,7 @@
 		video.volume = volume / maxVolume;
 		if (volume === 0) isMuted = true;
 		else isMuted = false;
-		console.log(hls.config)
+		console.log(hls.config);
 	}
 
 	function handleMute() {
@@ -101,12 +114,13 @@
 	}
 
 	onMount(() => {
+		console.log("src", src)
 		if (Hls.isSupported()) {
 			hls = new Hls({
 				forceKeyFrameOnDiscontinuity: true
 			});
-			let src = 'http://localhost:3000/videos/tarik';
 			hls.loadSource(src);
+			console.log(hls)
 			hls.attachMedia(video);
 			hls.enableWorker = true;
 
@@ -125,18 +139,30 @@
 				console.log(resolutions);
 			});
 
+			video.play()
+
+			console.log(video)
+
 			video.addEventListener('progress', function () {
-				let buffered = video.buffered;
-				if (buffered.length > 0) {
+				let buffered = video?.buffered;
+				if (buffered && buffered.length > 0) {
 					bufferedTime = buffered.end(buffered.length - 1);
 				}
 			});
+
 		}
 	});
 </script>
 
 <div class="container">
-	<div class="player-container" bind:this={playerContainer}>
+	<div
+		class="player-container"
+		bind:this={playerContainer}
+		on:mousemove={handleMouseMove}
+		on:mouseleave={() => {
+			playerControls.style.opacity = 0;
+		}}
+	>
 		<!-- svelte-ignore a11y-media-has-caption -->
 		<video
 			class="video"
@@ -147,7 +173,7 @@
 			loop
 		/>
 
-		<div class="controls">
+		<div class="controls" bind:this={playerControls}>
 			<!-- svelte-ignore a11y-click-events-have-key-events -->
 			<div class="video-progress" on:click={(e) => handleSeek(e)}>
 				<div class="video-bar" />
@@ -252,13 +278,12 @@
 		display: flex;
 		flex-direction: column;
 		position: relative;
+		justify-content: center;
 	}
 
 	.video {
 		max-width: 100%;
 		max-height: 100%;
-		width: auto;
-		margin: 0 auto;
 	}
 
 	.video-consumed,
@@ -304,6 +329,10 @@
 		color: rgb(255, 255, 255);
 		opacity: 0;
 		transition: opacity 0.3s;
+	}
+
+	.controls i{
+		font-size: 1.4em;
 	}
 
 	.player-container:hover .controls {
