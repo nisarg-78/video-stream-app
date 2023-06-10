@@ -3,21 +3,17 @@
 	import Hls from 'hls.js';
 
 	let video;
+	let playerContainer;
 	let hls;
 	const maxVolume = 100;
 	let isMuted = false;
 	let resolutions = [];
-	let fullscreen = false;
+	let isFullscreen = false;
 	let playing = false;
 	$: level = hls ? hls.currentLevel : 0;
 	let bufferedTime = 0;
-	$: playbackTime = video ? video.currentTime : 0;
+	let playbackTime = 0;
 	$: duration = hls && playbackTime ? video.duration : 0;
-
-	function handlePause() {
-		video.pause();
-		playing = false;
-	}
 
 	function handlePlay() {
 		if (!video) return;
@@ -30,11 +26,26 @@
 		}
 	}
 
+	function throttle(func, delay) {
+		let timer = null;
+		return function (...args) {
+			if (!timer) {
+				func.apply(this, args);
+				timer = setTimeout(() => {
+					timer = null;
+				}, delay);
+			}
+		};
+	}
+
+	const throttledHandleVolume = throttle(handleVolume, 200);
+
 	function handleVolume(event) {
 		const volume = event.target.value;
 		video.volume = volume / maxVolume;
 		if (volume === 0) isMuted = true;
 		else isMuted = false;
+		console.log(hls.config)
 	}
 
 	function handleMute() {
@@ -79,11 +90,22 @@
 		}
 	}
 
+	function handleFullscreen() {
+		if (!isFullscreen) {
+			isFullscreen = true;
+			playerContainer.requestFullscreen();
+		} else {
+			isFullscreen = false;
+			document.exitFullscreen();
+		}
+	}
+
 	onMount(() => {
 		if (Hls.isSupported()) {
-			hls = new Hls();
-			let src =
-				'https://bitdash-a.akamaihd.net/content/sintel/hls/playlist.m3u8';
+			hls = new Hls({
+				forceKeyFrameOnDiscontinuity: true
+			});
+			let src = 'http://localhost:3000/videos/tarik';
 			hls.loadSource(src);
 			hls.attachMedia(video);
 			hls.enableWorker = true;
@@ -114,12 +136,13 @@
 </script>
 
 <div class="container">
-	<div class="player-container">
+	<div class="player-container" bind:this={playerContainer}>
 		<!-- svelte-ignore a11y-media-has-caption -->
 		<video
 			class="video"
 			bind:this={video}
 			on:click={handlePlay}
+			on:dblclick={handleFullscreen}
 			bind:currentTime={playbackTime}
 			loop
 		/>
@@ -166,7 +189,7 @@
 					{/if}
 					<input
 						type="range"
-						on:input={handleVolume}
+						on:input={throttledHandleVolume}
 						id="volume"
 						name="volume"
 						min="0"
@@ -183,6 +206,19 @@
 						<option value="auto">Auto {hls ? hls?.levels[level]?.height + 'p' : ''}</option>
 					</select>
 				</div>
+
+				<!-- fullscreen handle -->
+				<div>
+					{#if isFullscreen}
+						<button on:click={handleFullscreen}>
+							<i class="fa fa-compress" aria-hidden="true" />
+						</button>
+					{:else}
+						<button on:click={handleFullscreen}>
+							<i class="fa fa-expand" aria-hidden="true" />
+						</button>
+					{/if}
+				</div>
 			</div>
 		</div>
 	</div>
@@ -195,7 +231,7 @@
 	crossorigin="anonymous"
 	referrerpolicy="no-referrer"
 />
-<link rel="preconnect" href="https://fonts.bunny.net">
+<link rel="preconnect" href="https://fonts.bunny.net" />
 <link href="https://fonts.bunny.net/css?family=andika:400" rel="stylesheet" />
 
 <style>
@@ -210,10 +246,19 @@
 	}
 
 	.player-container {
-		width: 90%;
+		background-color: #000;
+		max-height: 90vh;
+		max-width: 90%;
 		display: flex;
 		flex-direction: column;
 		position: relative;
+	}
+
+	.video {
+		max-width: 100%;
+		max-height: 100%;
+		width: auto;
+		margin: 0 auto;
 	}
 
 	.video-consumed,
@@ -231,9 +276,12 @@
 	}
 
 	.video-bar {
+		position: absolute;
+		bottom: -50%;
 		min-width: 100%;
-		height: 3px;
+		height: 6px;
 		z-index: 2;
+		cursor: pointer;
 	}
 
 	.video-consumed {
@@ -249,17 +297,11 @@
 		position: absolute;
 		bottom: 0;
 		width: 100%;
-		background-color: #3e4b56;
+		background-color: rgba(0, 0, 0, 0.75);
 		display: flex;
 		flex-direction: column;
 		align-items: center;
 		color: rgb(255, 255, 255);
-		background: linear-gradient(
-			0deg,
-			rgba(0, 0, 0, 0.4009978991596639) 0%,
-			rgba(0, 0, 0, 0) 74%,
-			rgba(255, 255, 255, 0) 100%
-		);
 		opacity: 0;
 		transition: opacity 0.3s;
 	}
@@ -297,6 +339,4 @@
 		display: flex;
 		align-items: center;
 	}
-
-	
 </style>
