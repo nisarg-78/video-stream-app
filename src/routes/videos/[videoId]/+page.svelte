@@ -5,7 +5,7 @@
 
 	console.log($page)
 	let videoId = $page?.params?.videoId
-	const src = 'http://localhost:3000/videos/' + videoId
+	const src = 'https://video-stream-7f9u.onrender.com/' + videoId
 
 </script>
 
