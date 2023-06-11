@@ -160,8 +160,6 @@
 				}
 			});
 
-			video.play();
-
 			console.log(video);
 
 			video.addEventListener('progress', function () {
@@ -190,6 +188,7 @@
 			on:click={handlePlay}
 			on:dblclick={handleFullscreen}
 			on:waiting={handleWaiting}
+			on:canplay={handlePlaying}
 			on:playing={handlePlaying}
 			bind:currentTime={playbackTime}
 			loop
@@ -420,24 +419,17 @@
 		transition: opacity 0.2s;
 	}
 	/* The slider handle (use -webkit- (Chrome, Opera, Safari, Edge) and -moz- (Firefox) to override default look) */
-	.volume-hanlde input[type='range']::-webkit-slider-thumb {
+	.volume-hanlde input[type='range']::-webkit-slider-thumb,
+	.volume-hanlde input[type='range']::-moz-range-thumb{
 		-webkit-appearance: none;
-		appearance: none;
-		width: 25px;
-		height: 5px;
-		background: #fff;
-		cursor: pointer;
+        appearance: none;
+        width: 25px;
+        height: 5px;
+        background: #ef233c;
+        cursor: pointer;
 	}
 
-	.volume-hanlde input[type='range']::-moz-range-thumb {
-		width: 10px;
-		height: 10px;
-		background: #ef233c;
-		cursor: pointer;
-	}
-
-	input[type='range']::-moz-range-progress,
-	input[type='range']::-webkit-progress-value {
+	input[type='range']::-moz-range-progress{
 		background-color: #ef233c;
 	}
 
