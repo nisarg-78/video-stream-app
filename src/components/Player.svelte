@@ -168,6 +168,9 @@
 					bufferedTime = buffered.end(buffered.length - 1);
 				}
 			});
+
+			video.play()
+			video.muted = false
 		}
 	});
 </script>
@@ -184,6 +187,7 @@
 		<!-- svelte-ignore a11y-media-has-caption -->
 		<video
 			class="video"
+			muted="true"
 			bind:this={video}
 			on:click={handlePlay}
 			on:dblclick={handleFullscreen}
@@ -420,7 +424,8 @@
 	}
 	/* The slider handle (use -webkit- (Chrome, Opera, Safari, Edge) and -moz- (Firefox) to override default look) */
 	.volume-hanlde input[type='range']::-webkit-slider-thumb,
-	.volume-hanlde input[type='range']::-moz-range-thumb{
+	.volume-hanlde input[type='range']::-moz-range-thumb,
+	.volume-hanlde input[type='range']::-ms-thumb {
 		-webkit-appearance: none;
         appearance: none;
         width: 25px;

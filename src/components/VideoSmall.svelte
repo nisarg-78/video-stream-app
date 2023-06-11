@@ -20,6 +20,11 @@
 		font-family: 'ABeeZee', sans-serif;
 	}
 
+	a{
+		padding: 0;
+		margin: 0;
+	}
+
 	.video {
 		display: flex;
 		flex-direction: column;
@@ -30,6 +35,7 @@
 		height: 100%;
 		gap: 1em;
 	}
+
 	img {
 		width: 100%;
 		height: 100%;
