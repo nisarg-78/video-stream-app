@@ -283,7 +283,9 @@
 						{#each resolutions as res}
 							<option value={res}>{res[0]}p ({(res[1] / 1024 / 1024).toFixed(2)}Mbps)</option>
 						{/each}
-						<option value="auto">Auto {hls?.levels[level]?.height ? hls?.levels[level]?.height + 'p' : ''}</option>
+						<option value="auto"
+							>Auto {hls?.levels[level]?.height ? hls?.levels[level]?.height + 'p' : ''}</option
+						>
 					</select>
 				</div>
 
@@ -318,7 +320,7 @@
 	.container {
 		font-family: 'Andika', sans-serif;
 		background-color: #232a30;
-		height: 100vh;
+		height: 100%;
 		display: flex;
 		flex-direction: column;
 		justify-content: center;
@@ -328,14 +330,14 @@
 	.player-container {
 		background-color: #000;
 		height: 90vh;
-		width: 100vw;
+		min-width: calc(90vh * 16 / 9);
 		display: flex;
 		flex-direction: column;
 		position: relative;
 		justify-content: center;
 	}
 
-	.loader{
+	.loader {
 		position: absolute;
 		left: 50%;
 		transform: translateX(-50%);
@@ -371,12 +373,12 @@
 	}
 
 	.video-consumed {
-		background-color: #0400e9;
+		background-color: #ef233c;
 		z-index: 1;
 	}
 
 	.video-buffered {
-		background-color: rgba(167, 198, 228, 0.5);
+		background-color: rgba(255, 232, 232, 0.5);
 	}
 
 	.controls {
@@ -403,6 +405,40 @@
 	.volume-hanlde {
 		display: flex;
 		align-items: center;
+	}
+
+	/* The slider itself */
+	.volume-hanlde input[type='range'] {
+		-webkit-appearance: none; /* Override default CSS styles */
+		appearance: none;
+		width: 75%;
+		height: 5px;
+		background: rgba(255, 0, 0, 0.25);
+		outline: none;
+		opacity: 1;
+		-webkit-transition: 0.2s;
+		transition: opacity 0.2s;
+	}
+	/* The slider handle (use -webkit- (Chrome, Opera, Safari, Edge) and -moz- (Firefox) to override default look) */
+	.volume-hanlde input[type='range']::-webkit-slider-thumb {
+		-webkit-appearance: none;
+		appearance: none;
+		width: 25px;
+		height: 5px;
+		background: #fff;
+		cursor: pointer;
+	}
+
+	.volume-hanlde input[type='range']::-moz-range-thumb {
+		width: 10px;
+		height: 10px;
+		background: #ef233c;
+		cursor: pointer;
+	}
+
+	input[type='range']::-moz-range-progress,
+	input[type='range']::-webkit-progress-value {
+		background-color: #ef233c;
 	}
 
 	.control-handles {

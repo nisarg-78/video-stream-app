@@ -1,14 +1,27 @@
 <script>
-	import Player from "../../../components/Player.svelte";
-	import { page } from '$app/stores'
-	import Navbar from "../../../components/Navbar.svelte";
+	import Player from '../../../components/Player.svelte';
+	import { page } from '$app/stores';
+	import Navbar from '../../../components/Navbar.svelte';
 
-	console.log($page)
-	let videoId = $page?.params?.videoId
-	const src = 'https://video-stream-7f9u.onrender.com/videos/' + videoId
-
+	let videoId = $page?.params?.videoId;
+	const src = 'https://video-stream-7f9u.onrender.com/videos/' + videoId;
 </script>
 
-<Navbar />
+<div class="container">
+	<Navbar />
+	<div class="player">
+		<Player {src} />
+	</div>
+</div>
 
-<Player {src} />
+<style>
+	.container {
+		display: flex;
+		flex-direction: column;
+		height: 100vh;
+	}
+	.player {
+		flex-grow: 1;
+		background-color: #434768;
+	}
+</style>
