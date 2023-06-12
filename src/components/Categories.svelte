@@ -4,10 +4,10 @@
 </h2>
 
 <style>
-    @import url(https://fonts.bunny.net/css?family=abeezee:400);
+    @import url(https://fonts.bunny.net/css?family=open-sans:400);
 
     *{
-        font-family: 'ABeeZee', sans-serif;
+        font-family: 'Open Sans', sans-serif;
     }
 
     h2{
