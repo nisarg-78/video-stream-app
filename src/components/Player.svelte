@@ -4,11 +4,13 @@
 
 	export let src;
 	let video;
+	let videoConsumedBar;
 	let playerContainer;
 	let playerControls;
 	let loaderIcon;
 	let hls;
 	const maxVolume = 100;
+	let volumeSlider;
 	let isMuted = false;
 	let resolutions = [];
 	let isFullscreen = false;
@@ -67,7 +69,14 @@
 		video.volume = volume / maxVolume;
 		if (volume === 0) isMuted = true;
 		else isMuted = false;
-		console.log(hls.config);
+		localStorage.setItem('volume', event.target.value);
+	}
+
+	function setVolume(value) {
+		volumeSlider.value = value;
+		video.volume = value / maxVolume;
+		if (volume === 0) isMuted = true;
+		else isMuted = false;
 	}
 
 	function handleMute() {
@@ -82,10 +91,20 @@
 	}
 
 	function handleSeek(event) {
-		console.log(event.target);
-		const newTime = (event.offsetX / event.target.offsetWidth) * duration;
-		video.currentTime = newTime;
-		playbackTime = newTime;
+		if (event.type === 'click') {
+			const newTime = (event.offsetX / event.target.offsetWidth) * duration;
+			video.currentTime = newTime;
+			playbackTime = newTime;
+			video.play();
+		}
+		if (event.type === 'mousemove') {
+			if (event.buttons !== 1) return;
+			videoConsumedBar.style.transform = 'scaleX(1)';
+			const newTime = (event.offsetX / event.target.offsetWidth) * duration;
+			video.currentTime = newTime;
+			playbackTime = newTime;
+			video.pause();
+		}
 	}
 
 	setInterval(() => {
@@ -169,8 +188,10 @@
 				}
 			});
 
+			const value = localStorage.getItem('volume');
+			setVolume(value);
 			video.play()
-			video.muted = false
+			video.muted = false;
 		}
 	});
 </script>
@@ -195,7 +216,6 @@
 			on:canplay={handlePlaying}
 			on:playing={handlePlaying}
 			bind:currentTime={playbackTime}
-			loop
 		/>
 
 		<!-- loading icon -->
@@ -232,9 +252,17 @@
 
 		<div class="controls" bind:this={playerControls}>
 			<!-- svelte-ignore a11y-click-events-have-key-events -->
-			<div class="video-progress" on:click={(e) => handleSeek(e)}>
+			<div
+				class="video-progress"
+				on:mousemove={(e) => handleSeek(e)}
+				on:click={(e) => handleSeek(e)}
+			>
 				<div class="video-bar" />
-				<div class="video-consumed" style="min-width: {(playbackTime / duration) * 100}%" />
+				<div
+					class="video-consumed"
+					bind:this={videoConsumedBar}
+					style="min-width: {(playbackTime / duration) * 100}%"
+				/>
 				<div class="video-buffered" style="min-width: {(bufferedTime / duration) * 100}%" />
 			</div>
 
@@ -271,6 +299,7 @@
 						</button>
 					{/if}
 					<input
+						bind:this={volumeSlider}
 						type="range"
 						on:input={throttledHandleVolume}
 						id="volume"
@@ -370,7 +399,7 @@
 		position: absolute;
 		bottom: -50%;
 		min-width: 100%;
-		height: 6px;
+		height: 20px;
 		z-index: 2;
 		cursor: pointer;
 	}
@@ -427,14 +456,14 @@
 	.volume-hanlde input[type='range']::-moz-range-thumb,
 	.volume-hanlde input[type='range']::-ms-thumb {
 		-webkit-appearance: none;
-        appearance: none;
-        width: 25px;
-        height: 5px;
-        background: #ef233c;
-        cursor: pointer;
+		appearance: none;
+		width: 25px;
+		height: 5px;
+		background: #ef233c;
+		cursor: pointer;
 	}
 
-	input[type='range']::-moz-range-progress{
+	input[type='range']::-moz-range-progress {
 		background-color: #ef233c;
 	}
 
