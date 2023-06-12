@@ -17,8 +17,8 @@
 	function getVideos(tags) {
 		console.log(tags);
 		let queryTags = tags.toString();
-		console.log('http://localhost:3000/videos?tags=' + (queryTags ? queryTags : ''));
-		fetch('http://localhost:3000/videos?tags=' + (queryTags ? queryTags : ''))
+		console.log('https://video-stream-7f9u.onrender.com/videos?tags=' + (queryTags ? queryTags : ''));
+		fetch('https://video-stream-7f9u.onrender.com/videos?tags=' + (queryTags ? queryTags : ''))
 			.then((res) => res.json())
 			.then((data) => {
 				console.log(data);
