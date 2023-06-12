@@ -86,11 +86,9 @@
 
 	main {
 		display: flex;
-		height: 100%;
 	}
 
 	.categories {
-		height: 100%;
 		width: 10%;
 		border-right: 1px solid gray;
 		color: aliceblue;
